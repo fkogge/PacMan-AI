@@ -164,11 +164,11 @@ def uniformCostSearch(problem):
                 # Actions taken so far plus the action required to get to the
                 # successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]
-                totalCostToSuccessor = problem.getCostOfActions(actionsToSuccessor)
+                costToSuccessor = problem.getCostOfActions(actionsToSuccessor)
 
                 fringe.push(
                     (successorState, actionsToSuccessor),
-                    totalCostToSuccessor
+                    costToSuccessor
                 )
 
     # No path to goal node if we reach here (failure)
@@ -184,7 +184,39 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    visited = set()  # To keep track of visited locations
+    fringe = util.PriorityQueue()  # Priority queue to perform UCS
+
+    # Initialize priority queue with start state and initial cost = 0
+    fringe.push((problem.getStartState(), []), 0)
+
+    while not fringe.isEmpty():
+        currentState, actionsTaken = fringe.pop()
+
+        # If pacman found the food pellet, return actions taken to get there
+        if problem.isGoalState(currentState):
+            return actionsTaken
+
+        if currentState not in visited:
+            # Mark location as visited
+            visited.add(currentState)
+
+            for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
+                # Actions taken so far plus the action required to get to the
+                # successor from current
+                actionsToSuccessor = actionsTaken + [successorAction]
+                costToSuccessor = problem.getCostOfActions(actionsToSuccessor)
+
+                # f(n) = g(n) + h(n)
+                totalCost = costToSuccessor + heuristic(successorState, problem)
+
+                fringe.push(
+                    (successorState, actionsToSuccessor),
+                    totalCost
+                )
+
+    # No path to goal node if we reach here (failure)
+    return []
 
 
 # Abbreviations
