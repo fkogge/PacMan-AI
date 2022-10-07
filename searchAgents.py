@@ -479,29 +479,6 @@ def foodHeuristic(state, problem):
     remainingFood = foodGrid.asList()
     return maxDistanceHeuristic(position, remainingFood, problem.startingGameState)
 
-def maxDistanceHeuristic(position, remainingSubGoals, startingGameState):
-    """
-    Heuristic function which calculates and returns the distance to the furthest
-    unvisited sub-goal.
-
-    Reaching a sub-goal means we've visited a position that improves the game
-    state or brings the game state closer to the actual goal. For example,
-    a sub-goal is Pacman eating one of the food pellets while the actual
-    goal is Pacman eating all of the food pellets on the grid.
-
-    position: current position
-    remainingSubGoals: iterable data structure of remaining sub-goals to visit
-    startingGameState: initial game state of the Pacman state space
-    """
-    maxDistance = float('-inf')
-
-    for subGoalPosition in remainingSubGoals:
-        # get distance to further unvisited sub-goal
-        distance = mazeDistance(position, subGoalPosition, startingGameState)
-        maxDistance = max(maxDistance, distance)
-
-    return maxDistance
-
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
     def registerInitialState(self, state):
@@ -586,3 +563,26 @@ def mazeDistance(point1, point2, gameState):
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False, visualize=False)
     return len(search.bfs(prob))
+
+def maxDistanceHeuristic(position, remainingSubGoals, startingGameState):
+    """
+    Heuristic function which calculates and returns the distance to the furthest
+    unvisited sub-goal.
+
+    Reaching a sub-goal means we've visited a position that improves the game
+    state or brings the game state closer to the actual goal. For example,
+    a sub-goal is Pacman eating one of the food pellets while the actual
+    goal is Pacman eating all of the food pellets on the grid.
+
+    position: current position
+    remainingSubGoals: iterable data structure of remaining sub-goals to visit
+    startingGameState: initial game state of the Pacman state space
+    """
+    maxDistance = float('-inf')
+
+    for subGoalPosition in remainingSubGoals:
+        # get distance to furthest unvisited sub-goal
+        distance = mazeDistance(position, subGoalPosition, startingGameState)
+        maxDistance = max(maxDistance, distance)
+
+    return maxDistance
