@@ -86,82 +86,66 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    visited = set()  # To keep track of visited locations
-    fringe = util.Stack()  # LIFO queue (stack) to perform DFS
-
-    # Initialize stack with the start state
-    fringe.push((problem.getStartState(), []))
-
-    while not fringe.isEmpty():
-        currentState, actionsTaken = fringe.pop()
-
-        # If pacman found the food pellet, return actions taken to get there
-        if problem.isGoalState(currentState):
-            return actionsTaken
-
-        if currentState not in visited:
-            # Mark location as visited
-            visited.add(currentState)
-
-            for successorState, successorAction, _ in problem.getSuccessors(currentState):
-                # To record path to successor, take the actions taken so far
-                # plus the action required to get to the successor from current
-                actionsToSuccessor = actionsTaken + [successorAction]
-                fringe.push((successorState, actionsToSuccessor))
-
-    # No path to goal node if we reach here (failure)
-    return []
+    return graphSearch(problem, util.Stack())  # LIFO stack to achieve DFS
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    visited = set()  # To keep track of visited locations
-    fringe = util.Queue()  # FIFO queue to perform BFS
+    return graphSearch(problem, util.Queue())  # FIFO queue to achieve BFS
 
-    # Initialize queue with the start state
-    fringe.push((problem.getStartState(), []))
+def graphSearch(problem, fringe):
+    """
+    Helper function for general graph search. Change the search algorithm
+    (DFS or BFS) by passing in a different data structure for the fringe.
+    """
+    startState = problem.getStartState()
+
+    # check if we start at the goal state
+    if problem.isGoalState(startState):
+        return []
+
+    visited = set()  # keep track of visited locations
+    fringe.push((startState, []))  # initialize stack with the start state
 
     while not fringe.isEmpty():
         currentState, actionsTaken = fringe.pop()
 
-        # If pacman found the food pellet, return actions taken to get there
+        # if pacman found the food pellet, return actions taken to get there
         if problem.isGoalState(currentState):
             return actionsTaken
 
         if currentState not in visited:
-            # Mark location as visited
-            visited.add(currentState)
+            visited.add(currentState)  # mark location as visited
 
-            for successorState, successorAction, _ in problem.getSuccessors(currentState):
-                # To record path to successor, take the actions taken so far
+            for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
+                # record path to successor by taking actions taken so far
                 # plus the action required to get to the successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]
                 fringe.push((successorState, actionsToSuccessor))
 
-    # No path to goal node if we reach here
+    # no path to goal node if we reach here (failure)
     return []
-
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    visited = set()  # To keep track of visited locations
-    fringe = util.PriorityQueue()  # Priority queue to perform UCS
+    visited = set()  # to keep track of visited locations
+    fringe = util.PriorityQueue()  # priority queue to perform UCS
 
-    # Initialize priority queue with start state and initial cost = 0
+    # initialize priority queue with start state and initial cost = 0
     fringe.push((problem.getStartState(), []), 0)
 
     while not fringe.isEmpty():
         currentState, actionsTaken = fringe.pop()
 
-        # If pacman found the food pellet, return actions taken to get there
+        # if pacman found the food pellet, return actions taken to get there
         if problem.isGoalState(currentState):
             return actionsTaken
 
         if currentState not in visited:
-            # Mark location as visited
+            # mark location as visited
             visited.add(currentState)
 
             for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
-                # Actions taken so far plus the action required to get to the
+                # actions taken so far plus the action required to get to the
                 # successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]
                 costToSuccessor = problem.getCostOfActions(actionsToSuccessor)
@@ -171,7 +155,7 @@ def uniformCostSearch(problem):
                     costToSuccessor
                 )
 
-    # No path to goal node if we reach here (failure)
+    # no path to goal node if we reach here (failure)
     return []
 
 def nullHeuristic(state, problem=None):
@@ -184,38 +168,40 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    visited = set()  # To keep track of visited locations
-    fringe = util.PriorityQueue()  # Priority queue to perform UCS
+    if problem.isGoalState(problem.getStartState()):
+        return []
 
-    # Initialize priority queue with start state and initial cost = 0
+    visited = set()  # to keep track of visited locations
+    fringe = util.PriorityQueue()  # priority queue to perform UCS
+
+    # initialize priority queue with start state and initial cost = 0
     fringe.push((problem.getStartState(), []), 0)
 
     while not fringe.isEmpty():
         currentState, actionsTaken = fringe.pop()
 
-        # If pacman found the food pellet, return actions taken to get there
+        # if pacman found the food pellet, return actions taken to get there
         if problem.isGoalState(currentState):
             return actionsTaken
 
         if currentState not in visited:
-            # Mark location as visited
+            # mark location as visited
             visited.add(currentState)
 
             for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
-                # Actions taken so far plus the action required to get to the
+                # actions taken so far plus the action required to get to the
                 # successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]
-                costToSuccessor = problem.getCostOfActions(actionsToSuccessor)
-
-                # f(n) = g(n) + h(n)
-                totalCost = costToSuccessor + heuristic(successorState, problem)
+                costToSuccessor = problem.getCostOfActions(actionsToSuccessor)  # g(n)
+                heuristicVal = heuristic(successorState, problem)  # h(n)
+                totalCost = costToSuccessor + heuristicVal  # f(n) = g(n) + h(n)
 
                 fringe.push(
                     (successorState, actionsToSuccessor),
                     totalCost
                 )
 
-    # No path to goal node if we reach here (failure)
+    # no path to goal node if we reach here (failure)
     return []
 
 

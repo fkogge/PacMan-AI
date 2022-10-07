@@ -40,7 +40,6 @@ from game import Actions
 import util
 import time
 import search
-import pickle
 
 class GoWestAgent(Agent):
     "An agent that goes West until it can't."
@@ -289,20 +288,10 @@ class CornersProblem(search.SearchProblem):
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
+        # similar to FoodProblem, so that heuristic function can access
+        # initial pacman game state
+        self.startingGameState = startingGameState
 
-        # self.touchedCorners = {
-        #     self.corners[0]: False,
-        #     self.corners[1]: False,
-        #     self.corners[2]: False,
-        #     self.corners[3]: False
-        # }
-        # self.numCornersTouched = 0
-
-        # Starting position, number of corners touched
-        #cornersVisited = { corner for corner in self.corners }
-        #self.startState = (self.startingPosition, self._serialize(cornersVisited))
-        self.numCorners = 4
-        self.startState = (self.startingPosition, self.corners)
 
     def getStartState(self):
         """
@@ -310,21 +299,15 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        return self.startState
+        # pair of (xy coordinate, list of corners)
+        return self.startingPosition, self.corners
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        # Number of corners touched is 4
-        # cornersVisited = pickle.loads(state[1])
-        # return cornersVisited[self.corners[0]] and \
-        #        cornersVisited[self.corners[1]] and \
-        #        cornersVisited[self.corners[2]] and \
-        #        cornersVisited[self.corners[3]]
-
-        return not state[1]
+        # remaining corners list is empty
+        return len(state[1]) == 0
 
     def getSuccessors(self, state):
         """
@@ -345,17 +328,16 @@ class CornersProblem(search.SearchProblem):
             nextx, nexty = int(x + dx), int(y + dy)
             hitsWall = self.walls[nextx][nexty]
 
-            "*** YOUR CODE HERE ***"
             if not hitsWall:
                 nextPosition = (nextx, nexty)
-                #cornersVisited = self._deserialize(state[1])
-                remainingCorners = list(state[1])
+                remainingCorners = list(state[1])  # copy of the remaining corners to visit
 
-                if nextPosition in self.corners and nextPosition in remainingCorners:
-                    #cornersVisited[nextPosition] = True
+                if nextPosition in remainingCorners:
+                    # keep track of visited corners by removing position from
+                    # list of remaining corners
                     remainingCorners.remove(nextPosition)
 
-                #nextState = (nextPosition, self._serialize(cornersVisited))
+                # cast remaining corners to tuple so it's immutable and hashable
                 nextState = (nextPosition, tuple(remainingCorners))
                 successorNode = (nextState, action, 1)
                 successors.append(successorNode)
@@ -376,17 +358,6 @@ class CornersProblem(search.SearchProblem):
             if self.walls[x][y]: return 999999
         return len(actions)
 
-    @staticmethod
-    def _serialize(data):
-        return pickle.dumps(data)
-
-    @staticmethod
-    def _deserialize(data):
-        return pickle.loads(data)
-
-    def _isCorner(self, location):
-         return location in self.corners
-
 
 def cornersHeuristic(state, problem):
     """
@@ -401,11 +372,14 @@ def cornersHeuristic(state, problem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    # if we're in goal state, then the cost to reach goal is 0
+    if problem.isGoalState(state):
+        return 0
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    # (xy coordinate, list of remaining corners to visit)
+    position, remainingCorners = state
+    return maxDistanceHeuristic(position, remainingCorners, problem.startingGameState)
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -497,9 +471,36 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
+    # if we're in goal state, then the cost to reach goal is 0
+    if problem.isGoalState(state):
+        return 0
+
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    remainingFood = foodGrid.asList()
+    return maxDistanceHeuristic(position, remainingFood, problem.startingGameState)
+
+def maxDistanceHeuristic(position, remainingSubGoals, startingGameState):
+    """
+    Heuristic function which calculates and returns the distance to the furthest
+    unvisited sub-goal.
+
+    Reaching a sub-goal means we've visited a position that improves the game
+    state or brings the game state closer to the actual goal. For example,
+    a sub-goal is Pacman eating one of the food pellets while the actual
+    goal is Pacman eating all of the food pellets on the grid.
+
+    position: current position
+    remainingSubGoals: iterable data structure of remaining sub-goals to visit
+    startingGameState: initial game state of the Pacman state space
+    """
+    maxDistance = float('-inf')
+
+    for subGoalPosition in remainingSubGoals:
+        # get distance to further unvisited sub-goal
+        distance = mazeDistance(position, subGoalPosition, startingGameState)
+        maxDistance = max(maxDistance, distance)
+
+    return maxDistance
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
