@@ -86,17 +86,20 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    return graphSearch(problem, util.Stack())  # LIFO stack to achieve DFS
+    # LIFO stack to achieve DFS
+    return uninformedGraphSearch(problem, util.Stack())
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    return graphSearch(problem, util.Queue())  # FIFO queue to achieve BFS
+    # FIFO queue to achieve BFS
+    return uninformedGraphSearch(problem, util.Queue())
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    return graphSearch(problem, util.PriorityQueue(), isUcs=True)
+    # Priority queue to achieve UCS
+    return uninformedGraphSearch(problem, util.PriorityQueue(), isUcs=True)
 
-def graphSearch(problem, fringe, isUcs=False):
+def uninformedGraphSearch(problem, fringe, isUcs=False):
     """
     Helper function for general graph search. Change the search algorithm
     (DFS or BFS) by passing in a different data structure for the fringe.
