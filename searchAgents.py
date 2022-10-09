@@ -329,8 +329,9 @@ class CornersProblem(search.SearchProblem):
             hitsWall = self.walls[nextx][nexty]
 
             if not hitsWall:
+                # get next position and copy of the remaining corners to visit
                 nextPosition = (nextx, nexty)
-                remainingCorners = list(state[1])  # copy of the remaining corners to visit
+                remainingCorners = list(state[1])
 
                 if nextPosition in remainingCorners:
                     # keep track of visited corners by removing position from

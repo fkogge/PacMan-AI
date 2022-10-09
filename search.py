@@ -92,68 +92,44 @@ def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     return graphSearch(problem, util.Queue())  # FIFO queue to achieve BFS
 
-def graphSearch(problem, fringe):
+def uniformCostSearch(problem):
+    """Search the node of least total cost first."""
+    return graphSearch(problem, util.PriorityQueue(), isUcs=True)
+
+def graphSearch(problem, fringe, isUcs=False):
     """
     Helper function for general graph search. Change the search algorithm
     (DFS or BFS) by passing in a different data structure for the fringe.
     """
     startState = problem.getStartState()
-
     # check if we start at the goal state
     if problem.isGoalState(startState):
         return []
 
     visited = set()  # keep track of visited locations
-    fringe.push((startState, []))  # initialize stack with the start state
+    if isUcs:
+        fringe.push((startState, []), 0)  # add initial cost for UCS
+    else:
+        fringe.push((startState, []))  # omit cost for general DFS or BFS
 
     while not fringe.isEmpty():
         currentState, actionsTaken = fringe.pop()
-
         # if pacman found the food pellet, return actions taken to get there
         if problem.isGoalState(currentState):
             return actionsTaken
 
         if currentState not in visited:
             visited.add(currentState)  # mark location as visited
-
-            for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
+            for successorState, successorAction, _ in problem.getSuccessors(currentState):
                 # record path to successor by taking actions taken so far
                 # plus the action required to get to the successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]
-                fringe.push((successorState, actionsToSuccessor))
-
-    # no path to goal node if we reach here (failure)
-    return []
-
-def uniformCostSearch(problem):
-    """Search the node of least total cost first."""
-    visited = set()  # to keep track of visited locations
-    fringe = util.PriorityQueue()  # priority queue to perform UCS
-
-    # initialize priority queue with start state and initial cost = 0
-    fringe.push((problem.getStartState(), []), 0)
-
-    while not fringe.isEmpty():
-        currentState, actionsTaken = fringe.pop()
-
-        # if pacman found the food pellet, return actions taken to get there
-        if problem.isGoalState(currentState):
-            return actionsTaken
-
-        if currentState not in visited:
-            # mark location as visited
-            visited.add(currentState)
-
-            for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
-                # actions taken so far plus the action required to get to the
-                # successor from current
-                actionsToSuccessor = actionsTaken + [successorAction]
-                costToSuccessor = problem.getCostOfActions(actionsToSuccessor)
-
-                fringe.push(
-                    (successorState, actionsToSuccessor),
-                    costToSuccessor
-                )
+                successorNode = (successorState, actionsToSuccessor)
+                if isUcs:
+                    fringe.push(successorNode,
+                                problem.getCostOfActions(actionsToSuccessor))
+                else:
+                    fringe.push(successorNode)
 
     # no path to goal node if we reach here (failure)
     return []
@@ -173,13 +149,11 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 
     visited = set()  # to keep track of visited locations
     fringe = util.PriorityQueue()  # priority queue to perform UCS
-
     # initialize priority queue with start state and initial cost = 0
     fringe.push((problem.getStartState(), []), 0)
 
     while not fringe.isEmpty():
         currentState, actionsTaken = fringe.pop()
-
         # if pacman found the food pellet, return actions taken to get there
         if problem.isGoalState(currentState):
             return actionsTaken
@@ -187,7 +161,6 @@ def aStarSearch(problem, heuristic=nullHeuristic):
         if currentState not in visited:
             # mark location as visited
             visited.add(currentState)
-
             for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
                 # actions taken so far plus the action required to get to the
                 # successor from current
@@ -195,7 +168,6 @@ def aStarSearch(problem, heuristic=nullHeuristic):
                 costToSuccessor = problem.getCostOfActions(actionsToSuccessor)  # g(n)
                 heuristicVal = heuristic(successorState, problem)  # h(n)
                 totalCost = costToSuccessor + heuristicVal  # f(n) = g(n) + h(n)
-
                 fringe.push(
                     (successorState, actionsToSuccessor),
                     totalCost
