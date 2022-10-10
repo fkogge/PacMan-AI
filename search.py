@@ -101,8 +101,16 @@ def uniformCostSearch(problem):
 
 def uninformedGraphSearch(problem, fringe, isUcs=False):
     """
-    Helper function for general graph search. Change the search algorithm
+    Helper function for uninformed graph search. Change the search algorithm
     (DFS or BFS) by passing in a different data structure for the fringe.
+
+    :param problem: game problem type
+    :param fringe: data structure to store the unexpanded nodes
+    :param isUcs: true if we are doing a uniform-cost search
+    :return: list of actions to get to the goal state
+    """
+    """
+
     """
     startState = problem.getStartState()
     # check if we start at the goal state
@@ -117,13 +125,16 @@ def uninformedGraphSearch(problem, fringe, isUcs=False):
 
     while not fringe.isEmpty():
         currentState, actionsTaken = fringe.pop()
+
         # if pacman found the food pellet, return actions taken to get there
         if problem.isGoalState(currentState):
             return actionsTaken
 
         if currentState not in visited:
             visited.add(currentState)  # mark location as visited
-            for successorState, successorAction, _ in problem.getSuccessors(currentState):
+            successorList = problem.getSuccessors(currentState)
+
+            for successorState, successorAction, _ in successorList:
                 # record path to successor by taking actions taken so far
                 # plus the action required to get to the successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]
@@ -164,7 +175,9 @@ def aStarSearch(problem, heuristic=nullHeuristic):
         if currentState not in visited:
             # mark location as visited
             visited.add(currentState)
-            for successorState, successorAction, successorCost in problem.getSuccessors(currentState):
+            successorList = problem.getSuccessors(currentState)
+
+            for successorState, successorAction, _ in successorList:
                 # actions taken so far plus the action required to get to the
                 # successor from current
                 actionsToSuccessor = actionsTaken + [successorAction]

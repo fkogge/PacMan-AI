@@ -285,9 +285,6 @@ class CornersProblem(search.SearchProblem):
             if not startingGameState.hasFood(*corner):
                 print('Warning: no food in corner ' + str(corner))
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
-        # Please add any code here which you would like to use
-        # in initializing the problem
-        "*** YOUR CODE HERE ***"
         # similar to FoodProblem, so that heuristic function can access
         # initial pacman game state
         self.startingGameState = startingGameState
@@ -298,7 +295,6 @@ class CornersProblem(search.SearchProblem):
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        "*** YOUR CODE HERE ***"
         # pair of (xy coordinate, list of corners)
         return self.startingPosition, self.corners
 
@@ -306,8 +302,7 @@ class CornersProblem(search.SearchProblem):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        # remaining corners list is empty
-        return len(state[1]) == 0
+        return len(state[1]) == 0  # remaining corners list is empty
 
     def getSuccessors(self, state):
         """
@@ -575,15 +570,15 @@ def maxDistanceHeuristic(position, remainingSubGoals, startingGameState):
     a sub-goal is Pacman eating one of the food pellets while the actual
     goal is Pacman eating all of the food pellets on the grid.
 
-    position: current position
-    remainingSubGoals: iterable data structure of remaining sub-goals to visit
-    startingGameState: initial game state of the Pacman state space
+    :param position: current position
+    :param remainingSubGoals: iterable data structure of remaining sub-goals to visit
+    :param startingGameState: initial game state of the Pacman state space
+    :return:
     """
     maxDistance = float('-inf')
-
     for subGoalPosition in remainingSubGoals:
-        # get distance to furthest unvisited sub-goal
+        # get maze distance to furthest unvisited sub-goal
         distance = mazeDistance(position, subGoalPosition, startingGameState)
+        # update max distance as we iterate
         maxDistance = max(maxDistance, distance)
-
     return maxDistance
