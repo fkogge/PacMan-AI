@@ -11,9 +11,6 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
-from util import manhattanDistance
-from game import Directions
 import random, util
 
 from game import Agent
@@ -148,8 +145,13 @@ class MultiAgentSearchAgent(Agent):
         return state.isWin() or state.isLose() or depth == self.depth
 
     def getNextAgentIndex(self, agentIndex, numAgents):
-        # Set next agent to PacMan if we looked at all ghost states, else
-        # just increment to next ghost index
+        """
+        Get the next agent index - PacMan (0) if we looked at all ghost states,
+        otherwise it increments to the next ghost index
+        :param agentIndex: current agent index
+        :param numAgents: number of agents in the game
+        :return: next agent index
+        """
         return self.index if agentIndex + 1 == numAgents else agentIndex + 1
 
 class MinimaxAgent(MultiAgentSearchAgent):
@@ -182,48 +184,67 @@ class MinimaxAgent(MultiAgentSearchAgent):
         self.numAgents = gameState.getNumAgents()
         maxValue, maxAction = float('-inf'), float('-inf')
 
+        # Calculate minimax value on each action for PacMan
         for action in gameState.getLegalActions(self.index):
             successorState = gameState.generateSuccessor(self.index, action)
-            value = self.miniMaxValue(successorState, self.index, 1)
+            value = self.miniMaxValue(successorState, 0, self.index)
             if value > maxValue:
                 maxValue, maxAction = value, action
+
         return maxAction
 
-    def miniMaxValue(self, gameState, depth, nextAgentIndex):
+    def miniMaxValue(self, nextGameState, depth, agentIndex):
+        """
+        Calculates the minimax value for the next game state
+        :param nextGameState: next game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :return: minimax value
+        """
+        nextAgentIndex = self.getNextAgentIndex(agentIndex, self.numAgents)
+
         if nextAgentIndex == self.index:
-            # Next agent is PacMan -> maximize action and increment depth
-            # since we've completed one search ply
-            return self.maxValue(gameState, depth + 1)
+            # PacMan -> maximize action and increment depth since we've
+            # completed one search ply
+            return self.maxValue(nextGameState, depth + 1, nextAgentIndex)
         else:
-            # Next agent is ghost -> so minimize action and we remain in
-            # the same search ply
-            return self.minValue(gameState, depth, nextAgentIndex)
+            # Ghost -> minimize action and remain in the same search ply
+            return self.minValue(nextGameState, depth, nextAgentIndex)
 
     def minValue(self, gameState, depth, agentIndex):
+        """
+        Calculates the minimum value for this game state (minimizer node in the
+        minimax tree)
+        :param gameState: current game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :return: minimum value
+        """
         if self.isTerminal(gameState, depth):
             return self.evaluationFunction(gameState)
 
         value = float('inf')
         for action in gameState.getLegalActions(agentIndex):
             successorState = gameState.generateSuccessor(agentIndex, action)
-            nextAgentIndex = self.getNextAgentIndex(agentIndex, self.numAgents)
-            value = min(
-                value,
-                self.miniMaxValue(successorState, depth, nextAgentIndex)
-            )
+            value = min(value, self.miniMaxValue(successorState, depth, agentIndex))
         return value
 
-    def maxValue(self, gameState, depth):
+    def maxValue(self, gameState, depth, agentIndex):
+        """
+        Calculates the maximum value for this game state (maximizer node in the
+        minimax tree)
+        :param gameState: current game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :return: maximum value
+        """
         if self.isTerminal(gameState, depth):
             return self.evaluationFunction(gameState)
 
         value = float('-inf')
-        for action in gameState.getLegalActions(self.index):
-            successorState = gameState.generateSuccessor(self.index, action)
-            value = max(
-                value,
-                self.miniMaxValue(successorState, depth, 1)
-            )
+        for action in gameState.getLegalActions(agentIndex):
+            successorState = gameState.generateSuccessor(agentIndex, action)
+            value = max(value, self.miniMaxValue(successorState, depth, agentIndex))
         return value
 
 
@@ -236,42 +257,58 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
         self.numAgents = gameState.getNumAgents()
         maxValue, maxAction = float('-inf'), float('-inf')
 
+        # Calculate minimax value on each action for PacMan
         for action in gameState.getLegalActions(self.index):
             successorState = gameState.generateSuccessor(self.index, action)
             value = self.miniMaxValue(
-                successorState, self.index, 1, alpha=maxValue, beta=float('inf')
+                successorState, 0, self.index, alpha=maxValue, beta=float('inf')
             )
             if value > maxValue:
                 maxValue, maxAction = value, action
 
         return maxAction
 
-    def miniMaxValue(self, gameState, depth, nextAgentIndex, alpha, beta):
+    def miniMaxValue(self, nextGameState, depth, agentIndex, alpha, beta):
+        """
+        Calculates the minimax value for the next game state
+        :param nextGameState: next game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :param alpha: maximizer node's best option on path to root
+        :param beta: minimizer node's best option on path to root
+        :return: minimax value
+        """
+        nextAgentIndex = self.getNextAgentIndex(agentIndex, self.numAgents)
+
         if nextAgentIndex == self.index:
-            # If next agent is PacMan, maximize action and increment depth
-            # since we've completed one search ply
-            return self.maxValue(gameState, depth + 1, alpha, beta)
+            # PacMan -> maximize action and increment depth since we've
+            # completed one search ply
+            return self.maxValue(nextGameState, depth + 1, nextAgentIndex, alpha, beta)
         else:
-            # Else, next agent is ghost, so minimize action and we remain in
-            # the same search ply
-            return self.minValue(gameState, depth, nextAgentIndex, alpha, beta)
+            # Ghost -> minimize action and remain in the same search ply
+            return self.minValue(nextGameState, depth, nextAgentIndex, alpha, beta)
 
     def minValue(self, gameState, depth, agentIndex, alpha, beta):
+        """
+        Calculates the minimum value for this game state (minimizer node in the
+        minimax tree)
+        :param gameState: current game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :param alpha: maximizer node's best option on path to root
+        :param beta: minimizer node's best option on path to root
+        :return: minimum value
+        """
         if self.isTerminal(gameState, depth):
             return self.evaluationFunction(gameState)
 
         value = float('inf')
         for action in gameState.getLegalActions(agentIndex):
             successorState = gameState.generateSuccessor(agentIndex, action)
-            nextAgentIndex = self.getNextAgentIndex(agentIndex, self.numAgents)
-            value = min(
-                value,
-                self.miniMaxValue(successorState, depth, nextAgentIndex, alpha, beta)
-            )
+            value = min(value, self.miniMaxValue(successorState, depth, agentIndex, alpha, beta))
 
             # Max-node will pick alpha anyways, so prune
             if value < alpha:
@@ -281,17 +318,24 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         return value
 
-    def maxValue(self, gameState, depth, alpha, beta):
+    def maxValue(self, gameState, depth, agentIndex, alpha, beta):
+        """
+        Calculates the maximum value for this game state (maximizer node in the
+        minimax tree)
+        :param gameState: current game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :param alpha: maximizer node's best option on path to root
+        :param beta: minimizer node's best option on path to root
+        :return: maximum value
+        """
         if self.isTerminal(gameState, depth):
             return self.evaluationFunction(gameState)
 
         value = float('-inf')
-        for action in gameState.getLegalActions(self.index):
-            successorState = gameState.generateSuccessor(self.index, action)
-            value = max(
-                value,
-                self.miniMaxValue(successorState, depth, 1, alpha, beta)
-            )
+        for action in gameState.getLegalActions(agentIndex):
+            successorState = gameState.generateSuccessor(agentIndex, action)
+            value = max(value, self.miniMaxValue(successorState, depth, agentIndex, alpha, beta))
 
             # Min-node will pick beta anyways, so prune
             if value > beta:
@@ -320,22 +364,38 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         for action in gameState.getLegalActions(self.index):
             successorState = gameState.generateSuccessor(self.index, action)
-            value = self.expectiMaxValue(successorState, self.index, 1)
+            value = self.expectiMaxValue(successorState, 0, self.index)
             if value > maxValue:
                 maxValue, maxAction = value, action
         return maxAction
 
-    def expectiMaxValue(self, gameState, depth, nextAgentIndex):
+    def expectiMaxValue(self, nextGameState, depth, agentIndex):
+        """
+        Calculates the expectiMax value for the next game state
+        :param nextGameState: next game state
+        :param depth: current depth of the expectiMax tree
+        :param agentIndex: current agent index
+        :return: expectiMax value
+        """
+        nextAgentIndex = self.getNextAgentIndex(agentIndex, self.numAgents)
+
         if nextAgentIndex == self.index:
-            # If next agent is PacMan, maximize action and increment depth
-            # since we've completed one search ply
-            return self.maxValue(gameState, depth + 1)
+            # PacMan -> maximize action and increment depth since we've
+            # completed one search ply
+            return self.maxValue(nextGameState, depth + 1, nextAgentIndex)
         else:
-            # Else, next agent is ghost, so calculate expected value and we
-            # remain in the same search ply
-            return self.expectedValue(gameState, depth, nextAgentIndex)
+            # Ghost -> get expected value and remain in the same search ply
+            return self.expectedValue(nextGameState, depth, nextAgentIndex)
 
     def expectedValue(self, gameState, depth, agentIndex):
+        """
+        Calculates the expected value for this game state (chance node in the
+        minimax tree), using uniform probability distribution.
+        :param gameState: current game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :return: expected value
+        """
         if self.isTerminal(gameState, depth):
             return self.evaluationFunction(gameState)
 
@@ -346,22 +406,26 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         for action in legalActions:
             successorState = gameState.generateSuccessor(agentIndex, action)
-            nextAgentIndex = self.getNextAgentIndex(agentIndex, self.numAgents)
-            value += probability * self.expectiMaxValue(successorState, depth, nextAgentIndex)
+            value += probability * self.expectiMaxValue(successorState, depth, agentIndex)
 
         return value
 
-    def maxValue(self, gameState, depth):
+    def maxValue(self, gameState, depth, agentIndex):
+        """
+        Calculates the maximum value for this game state (maximizer node in the
+        minimax tree)
+        :param gameState: current game state
+        :param depth: current depth of the minimax tree
+        :param agentIndex: current agent index
+        :return: maximum value
+        """
         if self.isTerminal(gameState, depth):
             return self.evaluationFunction(gameState)
 
         value = float('-inf')
-        for action in gameState.getLegalActions(self.index):
-            successorState = gameState.generateSuccessor(self.index, action)
-            value = max(
-                value,
-                self.expectiMaxValue(successorState, depth, 1)
-            )
+        for action in gameState.getLegalActions(agentIndex):
+            successorState = gameState.generateSuccessor(agentIndex, action)
+            value = max(value, self.expectiMaxValue(successorState, depth, agentIndex))
 
         return value
 
@@ -374,7 +438,31 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    pos = currentGameState.getPacmanPosition()
+    food = currentGameState.getFood()
+    ghostStates = currentGameState.getGhostStates()
+    scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+
+    foodReward = 50
+    scaredTimeIncentive = 50
+    capsuleMultiplier = 5
+
+    score = currentGameState.getScore()
+    for foodPos in food.asList():
+        distance = manhattanDistance(pos, foodPos)
+        if distance == 0:
+            score += foodReward
+        else:
+            score += (1 / distance)
+
+    score += capsuleMultiplier * len(currentGameState.getCapsules())
+
+    for scaredTime in scaredTimes:
+        if scaredTime > 0:
+            score += scaredTimeIncentive
+
+    return score
 
 # Abbreviation
 better = betterEvaluationFunction
