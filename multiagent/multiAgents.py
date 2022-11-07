@@ -70,12 +70,6 @@ class ReflexAgent(Agent):
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-        #print('successorGameState: ' + str(type(successorGameState)))
-        # print('newPos: ' + str(newPos))
-        # print('newFood: ' + str(newFood.asList()))
-        # print('newGhostStates: ' + str(len(newGhostStates)))
-        #print('newScaredTimes: ' + str(newScaredTimes))
-        "*** YOUR CODE HERE ***"
 
         foodReward = 50
         ghostIncentive = 25
@@ -107,8 +101,6 @@ class ReflexAgent(Agent):
             else:
                 score += ((1 / distance) * rewardMultiplier)
 
-
-        #return successorGameState.getScore()
         return score
 
 def scoreEvaluationFunction(currentGameState):
@@ -142,6 +134,13 @@ class MultiAgentSearchAgent(Agent):
         self.depth = int(depth)
 
     def isTerminal(self, state, depth):
+        """
+        Returns whether this state is terminal (in game tree, this would be
+        a leaf node with a static value).
+        :param state: current game state
+        :param depth: depth of the game tree
+        :return: true if terminal node, otherwise false
+        """
         return state.isWin() or state.isLose() or depth == self.depth
 
     def getNextAgentIndex(self, agentIndex, numAgents):
@@ -435,29 +434,44 @@ def betterEvaluationFunction(currentGameState):
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION: Calculates the score by evaluating the amount of food left,
+    number of capsules left, the distance to each food, the distance to each
+    capsule, and the scared times of the ghosts. Multipliers are used for
+    food and capsule rewards.
     """
-    "*** YOUR CODE HERE ***"
-
+    # Extract useful info from current game state
     pos = currentGameState.getPacmanPosition()
-    food = currentGameState.getFood()
+    foodList = currentGameState.getFood().asList()
     ghostStates = currentGameState.getGhostStates()
     scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+    capsules = currentGameState.getCapsules()
 
     foodReward = 50
     scaredTimeIncentive = 50
-    capsuleMultiplier = 5
+    foodMulitplier = 5
+    capsuleMultiplier = 10
 
+    # Initialize to current score
     score = currentGameState.getScore()
-    for foodPos in food.asList():
+
+    # The more food that is left, the less the score increases
+    if foodList:
+        score += 1 / (len(foodList) * foodMulitplier)
+
+    # The more capsules that are left, the less the score increases
+    if capsules:
+        score += 1 / (len(capsules) * capsuleMultiplier)
+
+    # Consider distance to each food
+    for foodPos in foodList:
         distance = manhattanDistance(pos, foodPos)
         if distance == 0:
             score += foodReward
         else:
-            score += (1 / distance)
+            # Less score is added if distance to this food is greater
+            score += 1 / (distance * foodMulitplier)
 
-    score += capsuleMultiplier * len(currentGameState.getCapsules())
-
+    # Consider how long ghosts are scared
     for scaredTime in scaredTimes:
         if scaredTime > 0:
             score += scaredTimeIncentive
