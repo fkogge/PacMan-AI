@@ -78,6 +78,7 @@ class ReflexAgent(Agent):
 
         score = successorGameState.getScore()
 
+        # Consider distances to food
         for foodPos in newFood.asList():
             distance = manhattanDistance(newPos, foodPos)
             if distance == 0:
@@ -85,6 +86,7 @@ class ReflexAgent(Agent):
             else:
                 score += (1 / distance)
 
+        # Consider distances to ghosts
         for ghostState, scaredTime in zip(newGhostStates, newScaredTimes):
             ghostPos = ghostState.getPosition()
             distance = manhattanDistance(newPos, ghostPos)
@@ -94,6 +96,7 @@ class ReflexAgent(Agent):
                 else:
                     score -= ghostIncentive
 
+        # Consider distances to capsules
         for capsulePos in successorGameState.getCapsules():
             distance = manhattanDistance(newPos, capsulePos)
             if distance == 0:
@@ -226,6 +229,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         for action in gameState.getLegalActions(agentIndex):
             successorState = gameState.generateSuccessor(agentIndex, action)
             value = min(value, self.miniMaxValue(successorState, depth, agentIndex))
+
         return value
 
     def maxValue(self, gameState, depth, agentIndex):
@@ -244,6 +248,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         for action in gameState.getLegalActions(agentIndex):
             successorState = gameState.generateSuccessor(agentIndex, action)
             value = max(value, self.miniMaxValue(successorState, depth, agentIndex))
+
         return value
 
 
@@ -357,7 +362,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         All ghosts should be modeled as choosing uniformly at random from their
         legal moves.
         """
-        "*** YOUR CODE HERE ***"
         self.numAgents = gameState.getNumAgents()
         maxValue, maxAction = float('-inf'), float('-inf')
 
@@ -366,6 +370,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             value = self.expectiMaxValue(successorState, 0, self.index)
             if value > maxValue:
                 maxValue, maxAction = value, action
+
         return maxAction
 
     def expectiMaxValue(self, nextGameState, depth, agentIndex):
@@ -389,7 +394,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     def expectedValue(self, gameState, depth, agentIndex):
         """
         Calculates the expected value for this game state (chance node in the
-        minimax tree), using uniform probability distribution.
+        expectiMax tree), using uniform probability distribution.
         :param gameState: current game state
         :param depth: current depth of the minimax tree
         :param agentIndex: current agent index
@@ -412,7 +417,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     def maxValue(self, gameState, depth, agentIndex):
         """
         Calculates the maximum value for this game state (maximizer node in the
-        minimax tree)
+        expectiMax tree)
         :param gameState: current game state
         :param depth: current depth of the minimax tree
         :param agentIndex: current agent index
@@ -436,8 +441,8 @@ def betterEvaluationFunction(currentGameState):
 
     DESCRIPTION: Calculates the score by evaluating the amount of food left,
     number of capsules left, the distance to each food, the distance to each
-    capsule, and the scared times of the ghosts. Multipliers are used for
-    food and capsule rewards.
+    capsule, the distance to each ghost and the scared times of the ghosts.
+    Multipliers are used for food and capsule rewards.
     """
     # Extract useful info from current game state
     pos = currentGameState.getPacmanPosition()
@@ -449,6 +454,7 @@ def betterEvaluationFunction(currentGameState):
     foodReward = 50
     scaredTimeIncentive = 50
     foodMulitplier = 5
+    ghostIncentive = 25
     capsuleMultiplier = 10
 
     # Initialize to current score
@@ -470,6 +476,16 @@ def betterEvaluationFunction(currentGameState):
         else:
             # Less score is added if distance to this food is greater
             score += 1 / (distance * foodMulitplier)
+
+    # Consider distances to ghosts
+    for ghostState, scaredTime in zip(ghostStates, scaredTimes):
+        ghostPos = ghostState.getPosition()
+        distance = manhattanDistance(pos, ghostPos)
+        if scaredTime > 0:
+            if distance <= 1:
+                score += ghostIncentive
+            else:
+                score -= ghostIncentive
 
     # Consider how long ghosts are scared
     for scaredTime in scaredTimes:
