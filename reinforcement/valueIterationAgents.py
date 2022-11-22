@@ -60,9 +60,15 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.runValueIteration()
 
     def runValueIteration(self):
-        # Write value iteration code here
-        "*** YOUR CODE HERE ***"
+        """Runs the value iteration using batch style update to values."""
+        for k in range(self.iterations):
+            nextValues = util.Counter()
+            for state in self.mdp.getStates():
+                maxAction = self.getAction(state)
+                if maxAction:
+                    nextValues[state] = self.getQValue(state, maxAction)
 
+            self.values = nextValues
 
     def getValue(self, state):
         """
@@ -76,8 +82,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qValue = 0
+
+        for nextState, transProb in self.mdp.getTransitionStatesAndProbs(state, action):
+            reward = self.mdp.getReward(state, action, nextState)
+            qValue += transProb * (reward + self.discount * self.values[nextState])
+
+        return qValue
+
 
     def computeActionFromValues(self, state):
         """
@@ -88,8 +100,20 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+
+        possibleActions = self.mdp.getPossibleActions(state)
+        bestAction, maxValue = float('-inf'), float('-inf')
+
+        for action in possibleActions:
+            qValue = self.getQValue(state, action)
+            if qValue > maxValue:
+                bestAction, maxValue = action, qValue
+
+        return bestAction
+
+
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
@@ -129,7 +153,16 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
 
     def runValueIteration(self):
-        "*** YOUR CODE HERE ***"
+        """Runs asynchronous value iteration"""
+        states = self.mdp.getStates()
+
+        for k in range(self.iterations):
+            # Wrap back around to first state
+            state = states[k % len(states)]
+            maxAction = self.getPolicy(state)
+            if maxAction:  # Make sure state is not terminal
+                self.values[state] = self.getQValue(state, maxAction)
+
 
 class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
     """
@@ -149,5 +182,71 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
 
     def runValueIteration(self):
-        "*** YOUR CODE HERE ***"
+        """
+        Runs the value iteration. Implemented using the provided pseudocode
+        for prioritized sweeping value iteration.
+        """
+        states = self.mdp.getStates()
+        predecessors = self.computePredecessors(states)
+        queue = util.PriorityQueue()
 
+        # Calculate absolute difference between current value of state
+        # and highest Q-value across, then add state to priority queue
+        for state in states:
+            if not self.mdp.isTerminal(state):
+                maxQValue = self.getMaxQValue(state)
+                diff = abs(self.values[state] - maxQValue)
+                queue.update(state, priority=-diff)
+
+        for iteration in range(self.iterations):
+            if queue.isEmpty():
+                return
+
+            state = queue.pop()
+
+            # Update value for the state
+            if not self.mdp.isTerminal(state):
+                self.values[state] = self.getMaxQValue(state)
+
+            # Calculate absolute difference between current value of predecessor
+            # state and highest Q-value, then add predessor state to priority queue
+            for predecessorSet in predecessors.values():
+                for pred in predecessorSet:
+                    maxQValue = self.getMaxQValue(pred)
+                    diff = abs(self.values[pred] - maxQValue)
+                    if diff > self.theta:
+                        queue.update(pred, priority=-diff)
+
+
+    def getMaxQValue(self, state):
+        """
+        Compute the highest Q-value across all possible actions from the state
+        :param state: state to evaluate
+        :return: highest Q-value
+        """
+        maxQValue = float('-inf')
+        for action in self.mdp.getPossibleActions(state):
+            maxQValue = max(maxQValue, self.getQValue(state, action))
+        return maxQValue
+
+    def computePredecessors(self, states):
+        """
+        Computes the predecessor states for each of the states.
+
+        From spec: "we define the predecessors of a state s as all states that
+        have a nonzero probability of reaching s by taking some action a"
+
+        :param states: list of states to compute predecessors of
+        :return: dictionary of states (tuple) mapped to their predecessor states (set)
+        """
+        predecessors = {}  # Key: state, Value: set of predecessor states
+
+        for state in states:
+            for action in self.mdp.getPossibleActions(state):
+                for nextState, transProb in self.mdp.getTransitionStatesAndProbs(state, action):
+                    if transProb > 0:
+                        if nextState not in predecessors:
+                            predecessors[nextState] = set()
+                        predecessors[nextState].add(state)
+
+        return predecessors

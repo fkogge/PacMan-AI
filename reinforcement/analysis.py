@@ -21,48 +21,50 @@
 
 def question2():
     answerDiscount = 0.9
-    answerNoise = 0.2
+    # Want agent to have higher chance to end up in the intended successor
+    # state, via the optimal policy, so noise needs to be lowered
+    answerNoise = 0.01
     return answerDiscount, answerNoise
 
 def question3a():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.1  # Don't want reward to diminish quickly
+    answerNoise = 0
+    answerLivingReward = 0.1  # Low living reward -> stay close to cliff
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3b():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.4
+    answerNoise = 0.1
+    answerLivingReward = -1  # Low living reward -> get to nearest exit
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3c():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.5  # Reward diminishes quick -> prefer higher reward (distant) exit
+    answerNoise = 0
+    answerLivingReward = 0.1  # Low living reward -> risk the cliff
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3d():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.5
+    answerNoise = 0.2  # Chance we go off the cliff so even more reason to avoid
+    answerLivingReward = 0.5  # High living reward -> avoid the cliff
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3e():
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0
+    answerNoise = 0
+    answerLivingReward = 0.9 # High living reward -> stay alive as long as possible
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question8():
     answerEpsilon = None
     answerLearningRate = None
-    return answerEpsilon, answerLearningRate
+    return 'NOT POSSIBLE'
     # If not possible, return 'NOT POSSIBLE'
 
 if __name__ == '__main__':
